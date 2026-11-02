@@ -171,7 +171,7 @@ export class ExampleOpenAiCompatibleAdapter implements ModelAdapter {
       stream,
       temperature: request.temperature,
       max_tokens: request.maxTokens,
-      ...(request.modelParams ?? {}),
+      ...request.modelParams,
     };
   }
 
@@ -183,7 +183,7 @@ export class ExampleOpenAiCompatibleAdapter implements ModelAdapter {
   ): Promise<Response> {
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
-      ...(options?.headers ?? {}),
+      ...options?.headers,
     };
 
     if (this.apiKey) {
@@ -191,12 +191,17 @@ export class ExampleOpenAiCompatibleAdapter implements ModelAdapter {
     }
 
     try {
-      const res = await fetch(`${this.baseUrl}${path}`, {
+      const requestInit: RequestInit = {
         method,
         headers,
-        body: body ? JSON.stringify(body) : undefined,
         signal: options?.signal,
-      });
+      };
+
+      if (method !== 'GET' && body) {
+        requestInit.body = JSON.stringify(body);
+      }
+
+      const res = await fetch(`${this.baseUrl}${path}`, requestInit);
 
       if (!res.ok) {
         await this.handleErrorResponse(res);
